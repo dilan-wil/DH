@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { staffApi } from "@/functions/api";
+import StaffProfileCard from "@/components/staff/staffCard";
 
 // Mock data for staff members
 const mockStaff = [
@@ -26,7 +28,7 @@ const mockStaff = [
     name: "Sarah Johnson",
     email: "sarah.johnson@legalflow.com",
     phone: "+1 (555) 123-4567",
-    role: "Senior Lawyer",
+    role: "Senior_Lawyer",
     department: "Corporate Law",
     status: "active",
     avatar: "/placeholder.svg",
@@ -40,7 +42,7 @@ const mockStaff = [
     name: "Michael Chen",
     email: "michael.chen@legalflow.com",
     phone: "+1 (555) 234-5678",
-    role: "Legal Secretary",
+    role: "Legal_Secretary",
     department: "Corporate Law",
     status: "active",
     avatar: "/placeholder.svg",
@@ -77,9 +79,9 @@ const mockStaff = [
 ];
 
 const roleColors = {
-  "Senior Lawyer": "bg-blue-100 text-blue-800",
-  "Junior Lawyer": "bg-green-100 text-green-800",
-  "Legal Secretary": "bg-purple-100 text-purple-800",
+  Senior_Lawyer: "bg-blue-100 text-blue-800",
+  Junior_Lawyer: "bg-green-100 text-green-800",
+  Legal_Secretary: "bg-purple-100 text-purple-800",
   Accountant: "bg-orange-100 text-orange-800",
   Paralegal: "bg-indigo-100 text-indigo-800",
   Assistant: "bg-pink-100 text-pink-800",
@@ -94,34 +96,67 @@ const statusColors = {
 };
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState(mockStaff);
+  const [staff, setStaff] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
 
+  useEffect(() => {
+    const unsubscribeStaff = staffApi.listenAll(setStaff);
+
+    return () => {
+      if (unsubscribeStaff) unsubscribeStaff();
+    };
+  }, []);
+
   const departments = [
     "all",
-    ...Array.from(new Set(mockStaff.map((s) => s.department))),
+    ...Array.from(new Set(staff.map((s) => s.department))),
   ];
-  const roles = ["all", ...Array.from(new Set(mockStaff.map((s) => s.role)))];
+  const roles = ["all", ...Array.from(new Set(staff.map((s) => s.role)))];
 
   const filteredStaff = staff.filter((member) => {
+    const search = searchTerm.trim().toLowerCase();
+
     const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role.toLowerCase().includes(searchTerm.toLowerCase());
+      !search ||
+      [
+        member.firstName,
+        member.lastName,
+        member.email,
+        member.role,
+        member.department,
+        member.position,
+      ]
+        .filter(Boolean) // remove undefined/null
+        .some((field) => field.toLowerCase().includes(search));
+
     const matchesDepartment =
-      selectedDepartment === "all" || member.department === selectedDepartment;
-    const matchesRole = selectedRole === "all" || member.role === selectedRole;
+      selectedDepartment === "all" ||
+      member.department?.toLowerCase() === selectedDepartment.toLowerCase();
+
+    const matchesRole =
+      selectedRole === "all" ||
+      member.role?.toLowerCase() === selectedRole.toLowerCase();
 
     return matchesSearch && matchesDepartment && matchesRole;
   });
 
+  const lawyerRoles = [
+    "Senior_Lawyer",
+    "Junior_Lawyer",
+    "Senior_Partner",
+    "Junior_Partner",
+  ];
+
   const stats = {
     total: staff.length,
-    active: staff.filter((s) => s.status === "active").length,
-    lawyers: staff.filter((s) => s.role.includes("Lawyer")).length,
-    available: staff.filter((s) => s.status === "active").length,
+    active: staff.filter((s) => s.status?.toLowerCase() === "active").length,
+    lawyers: staff.filter((s) => lawyerRoles.includes(s.role)).length,
+    available: staff.filter(
+      (s) =>
+        s.status?.toLowerCase() === "active" && lawyerRoles.includes(s.role)
+    ).length,
   };
 
   return (
@@ -245,111 +280,7 @@ export default function StaffPage() {
       {/* Staff Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStaff.map((member) => (
-          <Card
-            key={member.id}
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-          >
-            <Link href={`/dashboard/staff/${member.id}`}>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={member.avatar || "/placeholder.svg"} />
-                    <AvatarFallback className="bg-blue-100 text-blue-600">
-                      {member.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {member.name}
-                      </h3>
-                      <Badge
-                        className={cn(
-                          "text-xs",
-                          statusColors[
-                            member.status as keyof typeof statusColors
-                          ]
-                        )}
-                      >
-                        {member.status}
-                      </Badge>
-                    </div>
-
-                    <Badge
-                      className={cn(
-                        "text-xs mb-2",
-                        roleColors[member.role as keyof typeof roleColors]
-                      )}
-                    >
-                      {member.role}
-                    </Badge>
-
-                    <p className="text-sm text-gray-600 mb-3">
-                      {member.department}
-                    </p>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Mail className="h-3 w-3" />
-                        <span className="truncate">{member.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Phone className="h-3 w-3" />
-                        <span>{member.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <MapPin className="h-3 w-3" />
-                        <span>{member.location}</span>
-                      </div>
-                    </div>
-
-                    {/* Role-specific info */}
-                    {member.role.includes("Lawyer") && member.hourlyRate && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-sm font-medium text-gray-900">
-                          ${member.hourlyRate}/hour
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Bar: {member.barNumber}
-                        </p>
-                      </div>
-                    )}
-
-                    {member.role === "Legal Secretary" &&
-                      member.typingSpeed && (
-                        <div className="mt-3 pt-3 border-t">
-                          <p className="text-sm font-medium text-gray-900">
-                            {member.typingSpeed}
-                          </p>
-                        </div>
-                      )}
-
-                    {member.role === "Accountant" && member.certifications && (
-                      <div className="mt-3 pt-3 border-t">
-                        <div className="flex flex-wrap gap-1">
-                          {member.certifications
-                            .slice(0, 2)
-                            .map((cert, idx) => (
-                              <Badge
-                                key={idx}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {cert}
-                              </Badge>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Link>
-          </Card>
+          <StaffProfileCard staff={member} />
         ))}
       </div>
 

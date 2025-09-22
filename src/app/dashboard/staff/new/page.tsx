@@ -39,6 +39,11 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  addToCollection,
+  setToCollection,
+} from "@/functions/add-to-collection";
+import { uploadFile } from "@/functions/upload-file";
 
 interface StaffFormData {
   firstName: string;
@@ -66,25 +71,29 @@ interface StaffFormData {
 }
 
 const departments = [
-  "Legal",
-  "Administration",
-  "Finance",
-  "Human Resources",
-  "IT Support",
-  "Marketing",
-  "Operations",
+  "Management Team",
+  "Litigation Department",
+  "Advisory Department",
+  "Tax Department",
+  "Customs, Exchange & Investment Department",
+  "Communication & Marketing Department",
 ];
 
 const positions = [
-  "Senior Partner",
-  "Associate Lawyer",
-  "Paralegal",
+  "Managing Director",
+  "Operations Manager",
   "Legal Assistant",
-  "Office Manager",
-  "Receptionist",
-  "Accountant",
-  "HR Manager",
-  "IT Specialist",
+  "Executive Assistant",
+  "Head of Litigation",
+  "Lawyer",
+  "Trainee Lawyer",
+  "Legal Officer",
+  "Head of Advisory",
+  "Advisory Associate",
+  "Head of Tax",
+  "Head of Customs, Exchange & Investment",
+  "Head of Communication & Marketing",
+  "Intern",
 ];
 
 const employmentTypes = ["Full-time", "Part-time", "Contract", "Intern"];
@@ -92,7 +101,10 @@ const employmentTypes = ["Full-time", "Part-time", "Contract", "Intern"];
 export default function NewStaffPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string | undefined>(
+    undefined
+  );
   const [newSkill, setNewSkill] = useState("");
 
   const [formData, setFormData] = useState<StaffFormData>({
@@ -143,11 +155,8 @@ export default function NewStaffPage() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      setProfileImage(file); // save file for uploading
+      setProfilePreview(URL.createObjectURL(file)); // generate preview
     }
   };
 
@@ -173,18 +182,51 @@ export default function NewStaffPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch("/api/createUser", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          displayName: formData.firstName,
+        }),
+      });
 
-      // Here you would typically send the data to your API
-      console.log("Staff data:", formData);
+      const data = await response.json();
+      // console.log(data);
+      // console.log(formData);
+      // 🚨 Stop if backend returned an error
+      if (!response.ok) {
+        toast.error(data.error || "Failed to create user. Please try again.");
+        return; // do not continue
+      }
+
+      let url = "";
+      if (profileImage) {
+        url = await uploadFile(profileImage, `profiles/${profileImage.name}`);
+        console.log("Uploaded profile image:", url);
+      }
+
+      await setToCollection("users", data.userId, {
+        ...formData,
+        profileImage: url,
+      });
+
+      await setToCollection("staff", data.userId, {
+        ...formData,
+        profileImage: url,
+      });
 
       toast.success("Staff member added successfully!");
-      router.push("/dashboard/staff");
+      // router.push("/dashboard/staff");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to add staff member. Please try again.");
     } finally {
       setIsLoading(false);
+      setProfileImage(null);
+      setProfilePreview(undefined);
     }
   };
 
@@ -224,7 +266,7 @@ export default function NewStaffPage() {
           <CardContent>
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={profileImage || undefined} />
+                <AvatarImage src={profilePreview} />
                 <AvatarFallback className="text-lg">
                   {formData.firstName[0]}
                   {formData.lastName[0]}

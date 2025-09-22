@@ -26,7 +26,7 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (!user) {
-      console.error("User is not authenticated");
+      // console.error("User is not authenticated");
       return;
     }
 
@@ -40,7 +40,7 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (!user) {
-      console.error("User is not authenticated");
+      // console.error("User is not authenticated");
       return;
     }
 
@@ -54,7 +54,7 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (!user) {
-      console.error("User is not authenticated");
+      // console.error("User is not authenticated");
       return;
     }
 
@@ -68,7 +68,7 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (!user || !userInfo) {
-      console.error("User is not authenticated");
+      // console.error("User is not authenticated");
       return;
     }
 
@@ -84,7 +84,7 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (!user || !userInfo) {
-      console.error("User is not authenticated");
+      // console.error("User is not authenticated");
       return;
     }
 
@@ -97,10 +97,10 @@ export default function DashboardLayout({
       };
     }
   }, [user, userInfo, setCases]);
-  
+
   React.useEffect(() => {
     if (!user || !userInfo) {
-      console.error("User is not authenticated");
+      // console.error("User is not authenticated");
       return;
     }
 

@@ -41,13 +41,13 @@ export async function POST(request: Request) {
       port: 465,
       secure: true,
       auth: {
-        user: "admin@onevisaplace.com",
-        pass: "Micro-phone43@",
+        user: "dilan@nanosatellitemissions.com",
+        pass: "z$Y6C;xm:9E~",
       },
     });
 
     const mailOptions = {
-      from: "admin@onevisaplace.com",
+      from: "dilan@nanosatellitemissions.com",
       to: email,
       subject: "Your Account has been Created",
       text: `Hello ${displayName},\n\nYour account has been successfully created. Here are your credentials:\n\nEmail: ${email}\nPassword: ${password}\n\nPlease change your password after logging in for security reasons.\n\nBest regards,\nYour App Team`,

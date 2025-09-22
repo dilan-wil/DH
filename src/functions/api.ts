@@ -11,7 +11,7 @@ import {
   where,
   DocumentData,
   CollectionReference,
-} from "firebase/firestore"
+} from "firebase/firestore";
 import { db } from "./firebase";
 import { addToCollection } from "./add-to-collection";
 import { updateDocument } from "./update-doc-in-collection";
@@ -37,16 +37,16 @@ export const departmentsApi = {
   },
 
   update: async (id: string, data: any) => {
-    await updateDocument("departments", id, data)
+    await updateDocument("departments", id, data);
   },
 
   delete: async (id: string) => {
-    await deleteFirestoreDocument("departments", id)
+    await deleteFirestoreDocument("departments", id);
   },
 
   listenAll: (callback: (data: any[]) => void) => {
     return getACollection("departments", callback);
-  }
+  },
 };
 
 // ================== Cases API ==================
@@ -72,11 +72,46 @@ export const casesApi = {
     await deleteDoc(docRef);
   },
 
-  listenByDepartment: (departmentId: string, callback: (data: any[]) => void) => {
-    const q = query(getColRef("cases"), where("departmentId", "==", departmentId));
+  listenByDepartment: (
+    departmentId: string,
+    callback: (data: any[]) => void
+  ) => {
+    const q = query(
+      getColRef("cases"),
+      where("departmentId", "==", departmentId)
+    );
     return onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       callback(data);
+    });
+  },
+};
+
+// ================== Staff API ==================
+export const staffApi = {
+  create: async (data: any) => {
+    const ref = await addToCollection("staff", data);
+    return { id: ref?.id, ...data };
+  },
+
+  getById: async (id: string) => {
+    const docRef = doc(db, "staff", id);
+    const snap = await getDoc(docRef);
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  },
+
+  update: async (id: string, data: any) => {
+    await updateDocument("staff", id, data);
+  },
+
+  delete: async (id: string) => {
+    await deleteFirestoreDocument("staff", id);
+  },
+
+  listenAll: (callback: (data: any[]) => void) => {
+    return getACollection("users", (data) => {
+      const filtered = data.filter((item: any) => item.role !== "admin");
+      callback(filtered);
     });
   },
 };

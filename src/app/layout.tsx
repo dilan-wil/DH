@@ -13,7 +13,7 @@ import { Toaster } from "@/components/ui/sonner";
 // });
 
 export const metadata = {
-  title: "Next app",
+  title: "DH Panel",
   description: "Law firm.",
   // icons: {
   //   icon: "/logo.png"
